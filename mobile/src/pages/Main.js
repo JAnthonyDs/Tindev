@@ -1,15 +1,18 @@
 import React, { useEffect, useState } from 'react'
 import { View, Image, StyleSheet, Text, TouchableOpacity, AsyncStorage } from 'react-native'
+import io from 'socket.io-client'
 
 import api from '../services/api'
 
 import logo from '../assets/logo.png'
 import like from '../assets/like.png'
 import dislike from '../assets/dislike.png'
+import itsamatch from '../assets/itsamatch.png'
 
 export default function Main({ navigation }) {
     const id = navigation.getParam('user');
     const [users, setUsers] = useState([])
+    const [matchDev, setMatchDev] = useState(null)
 
     useEffect(() => {
         async function loadUsers() {
@@ -24,6 +27,16 @@ export default function Main({ navigation }) {
 
         loadUsers()
     }, [id])
+
+    useEffect(() => {
+        const socket = io('http://192.168.0.105:3333',{
+            query: {user: id}
+        });
+
+        socket.on('match',dev => {
+            setMatchDev(dev)
+        })
+    },[id])
 
     async function handleLike() {
         const [user, ...rest] = users; //pegando o primeiro user e amazenando os restantes
@@ -81,6 +94,21 @@ export default function Main({ navigation }) {
                     <Image source={like} />
                 </TouchableOpacity>
             </View>
+            )}
+
+            {matchDev && (
+                <View style={styles.matchContainer}>
+                    <Image source={itsamatch} style={styles.matchImage}/>
+                    <Image style={styles.matchAvatar} source={{uri :matchDev.avatar}}/>
+
+                    <Text style={styles.matchName}>{matchDev.name}</Text>
+                    <Text style={styles.matchBio}>{matchDev.bio}</Text>
+
+                    <TouchableOpacity onPress={() => setMatchDev(null)}>
+                        <Text style={styles.closeMatch}>Fechar</Text>
+                    </TouchableOpacity>
+
+                </View>
             )}
         </View>
     );
